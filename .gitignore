@@ -1,0 +1,19 @@
+# 依赖与虚拟环境
+.venv/
+__pycache__/
+*.py[cod]
+
+# 生成的数据（Parquet、DuckDB、日志），仅保留元数据 catalog
+data/*
+!data/catalog.json
+
+# 前端
+web/node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
+# 临时文件
+*.log
+.DS_Store
+Thumbs.db
