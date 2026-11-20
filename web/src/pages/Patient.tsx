@@ -4,8 +4,8 @@ import {
   Space, Spin, Table, Tabs, Tag, Timeline, Typography,
 } from 'antd'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, fmtDateTime, fmtInt, getSeries, queryTable } from '../api'
-import type { QueryResponse, SeriesItem } from '../types'
+import { api, fmtDateTime, fmtInt, getSeries, queryTable, searchIds } from '../api'
+import type { QueryResponse, SearchMatch, SeriesItem } from '../types'
 import Chart, { PALETTE } from '../components/Chart'
 
 interface ComorbidityDetail {
@@ -307,8 +307,25 @@ export default function Patient() {
         setData(d)
         setActiveKey(stay ? 'icu' : hadm ? 'stays' : 'stays')
       })
-      .catch((err: Error) => setError(err.message))
-  }, [sid, hadm, stay])
+      .catch(async (err: Error) => {
+        if (!hadm && !stay) {
+          const found = await searchIds(String(sid)).catch(() => null)
+          const m = found?.matches.find((x: SearchMatch) => !(x.kind === 'patient' && x.subject_id === sid))
+          if (m) {
+            const target = m.kind === 'patient'
+              ? `/patient/${m.subject_id}`
+              : m.kind === 'admission'
+                ? `/patient/${m.subject_id}?hadm=${m.hadm_id}`
+                : `/patient/${m.subject_id}?stay=${m.stay_id}`
+            if (target !== `/patient/${sid}`) {
+              navigate(target, { replace: true })
+              return
+            }
+          }
+        }
+        setError(err.message)
+      })
+  }, [sid, hadm, stay, navigate])
 
   if (!subjectId) {
     return (
